@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Atlas or Local MongoDB Container
+  mongodb:
+    image: mongo:7.0
+    container_name: vidoqra-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: vidoqra
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - vidoqra-net
+
+  # 2. Redis Message Broker & PubSub
+  redis:
+    image: redis:7.2-alpine
+    container_name: vidoqra-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - vidoqra-net
+
+  # 3. FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: vidoqra-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/vidoqra
+      - MONGODB_DATABASE=vidoqra
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - LOCAL_STORAGE_DIR=/app/storage/media
+    volumes:
+      - media_storage:/app/storage/media
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - vidoqra-net
+
+  # 4. Celery Background Worker
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: vidoqra-celery-worker
+    restart: unless-stopped
+    command: ["celery", "-A", "backend.app.workers.celery_app", "worker", "--loglevel=info", "-c", "4"]
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/vidoqra
+      - MONGODB_DATABASE=vidoqra
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - LOCAL_STORAGE_DIR=/app/storage/media
+    volumes:
+      - media_storage:/app/storage/media
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - vidoqra-net
+
+  # 5. Next.js Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: vidoqra-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - vidoqra-net
+
+volumes:
+  mongo_data:
+  redis_data:
+  media_storage:
+
+networks:
+  vidoqra-net:
+    driver: bridge
+
