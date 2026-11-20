@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # Automated TLS / Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: vidoqra-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - ACME_EMAIL=${ACME_EMAIL:-admin@example.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - vidoqra-net
+
+  # Database
+  mongodb:
+    image: mongo:7.0
+    container_name: vidoqra-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - vidoqra-net
+
+  # Redis Broker
+  redis:
+    image: redis:7.2-alpine
+    container_name: vidoqra-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - vidoqra-net
+
+  # FastAPI Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: vidoqra-backend
+    restart: unless-stopped
+    environment:
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/vidoqra}
+      - MONGODB_DATABASE=vidoqra
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - LOCAL_STORAGE_DIR=/app/storage/media
+      - SECRET_KEY=${SECRET_KEY:-replace-with-secure-32-char-random-key}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://localhost}
+    volumes:
+      - media_storage:/app/storage/media
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - vidoqra-net
+
+  # Celery Worker Service
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: vidoqra-worker
+    restart: unless-stopped
+    command: ["celery", "-A", "backend.app.workers.celery_app", "worker", "--loglevel=info", "-c", "4"]
+    environment:
+      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017/vidoqra}
+      - MONGODB_DATABASE=vidoqra
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FFMPEG_PATH=/usr/bin/ffmpeg
+      - LOCAL_STORAGE_DIR=/app/storage/media
+    volumes:
+      - media_storage:/app/storage/media
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - vidoqra-net
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: vidoqra-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api/v1}
+    depends_on:
+      - backend
+    networks:
+      - vidoqra-net
+
+volumes:
+  caddy_data:
+  caddy_config:
+  mongo_data:
+  redis_data:
+  media_storage:
+
+networks:
+  vidoqra-net:
+    driver: bridge
