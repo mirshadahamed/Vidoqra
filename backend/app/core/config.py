@@ -1,6 +1,6 @@
 import os
-from typing import List, Optional
-from pydantic import Field
+from typing import List, Optional, Union
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,7 +19,16 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:8000",
+        "http://127.0.0.1:8000",
     ]
+    ALLOWED_ORIGIN_REGEX: Optional[str] = r"^https?:\/\/(.*\.vercel\.app|localhost(:\d+)?|127\.0\.0\.1(:\d+)?)$"
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     # Database
     MONGODB_URI: Optional[str] = Field(default=None, description="MongoDB Atlas connection URI. If None, in-memory/file fallback is used.")
