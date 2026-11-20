@@ -2,21 +2,24 @@ import os
 import sys
 import types
 
-current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-parent_dir = os.path.dirname(current_dir)
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
-
-# If deployed with Vercel Root Directory = 'backend', alias 'backend' to current_dir
+# Handle module resolution when deployed with Root Directory = 'backend'
 if "backend" not in sys.modules:
-    backend_pkg = types.ModuleType("backend")
-    backend_pkg.__path__ = [current_dir]
-    sys.modules["backend"] = backend_pkg
+    pkg = types.ModuleType("backend")
+    pkg.__path__ = [backend_dir]
+    sys.modules["backend"] = pkg
+    try:
+        import app
+        pkg.app = app
+        sys.modules["backend.app"] = app
+    except ImportError:
+        pass
 
 from backend.app.main import app
 
-# Vercel Serverless Function entry point
+# Vercel ASGI/WSGI entry point
+handler = app
 app = app
