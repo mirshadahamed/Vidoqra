@@ -3,8 +3,9 @@ import { DownloadJob, DownloadHistoryItem, CreateDownloadRequest } from "@/types
 
 export function getApiBase(): string {
   // 1. Explicit build/runtime environment variable
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "")
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "")
   }
 
   // 2. Client-side dynamic resolution
