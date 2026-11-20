@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     const backendUrl =
       process.env.BACKEND_URL ||
       process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:8000";
+      "https://vidoqra.vercel.app";
 
     return [
       {

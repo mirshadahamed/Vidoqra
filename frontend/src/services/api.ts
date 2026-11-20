@@ -16,11 +16,10 @@ export function getApiBase(): string {
     }
 
     // When deployed on Vercel or any public domain without NEXT_PUBLIC_API_URL,
-    // default to empty string so requests use relative path /api/v1/...
-    // which Next.js rewrites to the backend on the server side.
+    // automatically connect to your deployed Vercel backend API.
     const host = window.location.hostname
     if (host !== "localhost" && host !== "127.0.0.1") {
-      return ""
+      return "https://vidoqra.vercel.app"
     }
   }
 
