@@ -47,6 +47,25 @@ app.include_router(formats.router, prefix=settings.API_V1_PREFIX)
 app.include_router(downloads.router, prefix=settings.API_V1_PREFIX)
 app.include_router(history.router, prefix=settings.API_V1_PREFIX)
 
+# Root & Health convenience routes
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "project": "Vidoqra API",
+        "status": "online",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": f"{settings.API_V1_PREFIX}/health",
+    }
+
+@app.get("/health", tags=["Root"])
+async def root_health():
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "message": "Vidoqra API service is operational",
+    }
+
 # WebSocket Endpoint: General & Session updates
 @app.websocket("/ws/downloads")
 async def websocket_downloads(websocket: WebSocket):
