@@ -29,7 +29,7 @@ export function Logo({ className = "", size = "md", showTagline = false }: LogoP
     >
       {/* Minimalist Precision Geometric Icon */}
       <div
-        className={`${iconSizes[size]} flex items-center justify-center rounded-lg bg-[#17191C] dark:bg-[#F4F4F0] text-white dark:text-[#111315] transition-transform duration-200 group-hover:scale-[1.02]`}
+        className={`${iconSizes[size]} flex items-center justify-center rounded-lg bg-[#111315] dark:bg-[#F4F4F0] border border-[#303438]/40 dark:border-white/10 text-white dark:text-[#111315] transition-transform duration-200 group-hover:scale-[1.03] shadow-sm`}
       >
         <svg
           viewBox="0 0 24 24"
@@ -37,12 +37,11 @@ export function Logo({ className = "", size = "md", showTagline = false }: LogoP
           xmlns="http://www.w3.org/2000/svg"
           className="w-4 h-4"
         >
-          {/* Minimalist precision play-download aperture */}
-          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3" />
-          <path
-            d="M10 8.5L15.5 12L10 15.5V8.5Z"
-            fill="currentColor"
-          />
+          {/* Subtle concentric focal ring */}
+          <circle cx="12" cy="12" r="8" stroke="#526F61" strokeWidth="1.2" strokeDasharray="2 2" />
+          {/* Distinctive modern media/download glyph */}
+          <path d="M10 8L16 12L10 16V8Z" fill="currentColor" />
+          <path d="M12 15V18M10 16.5L12 18.5L14 16.5" stroke="#8BA997" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 

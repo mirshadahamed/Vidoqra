@@ -22,7 +22,9 @@ export const metadata: Metadata = {
   title: "Vidoqra — Your media. Simplified.",
   description: "A simpler way to explore available media formats and manage your downloads. Quiet luxury, Swiss editorial clarity, and cinematic media tools.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 

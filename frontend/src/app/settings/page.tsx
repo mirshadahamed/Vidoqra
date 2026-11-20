@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react"
 import { Navbar } from "@/components/layout/navbar"
 import { Sidebar } from "@/components/layout/sidebar"
-import { api } from "@/services/api"
+import { api, getApiBase } from "@/services/api"
 import { Button } from "@/components/ui/button"
-import { Server, HardDrive, Key, Check } from "lucide-react"
+import { Server, HardDrive, Key, Check, Globe } from "lucide-react"
 
 export default function SettingsPage() {
   const [health, setHealth] = useState<{
@@ -16,15 +16,32 @@ export default function SettingsPage() {
   } | null>(null)
   const [sessionId, setSessionId] = useState<string>("")
   const [copiedSession, setCopiedSession] = useState(false)
+  const [backendUrl, setBackendUrl] = useState<string>("")
+  const [savedUrl, setSavedUrl] = useState(false)
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setSessionId(localStorage.getItem("vidoqra_session_id") || "guest_default")
+      setBackendUrl(localStorage.getItem("vidoqra_backend_url") || getApiBase())
     }
     api.checkHealth()
       .then(setHealth)
       .catch(() => setHealth({ status: "Offline", version: "1.0", redis: false, mongodb: false }))
   }, [])
+
+  const handleSaveBackendUrl = () => {
+    if (typeof window !== "undefined") {
+      const trimmed = backendUrl.trim().replace(/\/$/, "")
+      if (trimmed) {
+        localStorage.setItem("vidoqra_backend_url", trimmed)
+      } else {
+        localStorage.removeItem("vidoqra_backend_url")
+      }
+      setSavedUrl(true)
+      setTimeout(() => setSavedUrl(false), 2000)
+      window.location.reload()
+    }
+  }
 
   const handleResetSession = () => {
     if (typeof window !== "undefined") {
@@ -143,6 +160,39 @@ export default function SettingsPage() {
                     24 Hours (Automated Cleanup)
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Backend API Endpoint Configuration */}
+            <div className="p-5 sm:p-6 rounded-xl border border-[#E6E4DD] dark:border-[#303438] bg-white dark:bg-[#191C1F] shadow-[0_1px_3px_rgba(0,0,0,0.02)] space-y-4 md:col-span-2">
+              <div className="flex items-center gap-2.5">
+                <Globe className="w-4 h-4 text-[#526F61] dark:text-[#8BA997]" />
+                <h3 className="font-medium text-sm text-[#17191C] dark:text-[#F4F4F0]">
+                  Backend API Endpoint
+                </h3>
+              </div>
+
+              <p className="text-xs text-[#74777C] dark:text-[#A0A4A7] leading-relaxed">
+                Connect your frontend to a local or deployed Vercel/Railway backend. Leave blank to use the default environment endpoint or same-origin reverse proxy.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <input
+                  type="text"
+                  value={backendUrl}
+                  onChange={(e) => setBackendUrl(e.target.value)}
+                  placeholder="https://your-backend-app.vercel.app or http://localhost:8000"
+                  className="flex-1 bg-[#F5F4F0] dark:bg-[#111315] px-3.5 py-2 rounded-lg border border-[#E6E4DD] dark:border-[#303438] font-mono text-xs text-[#17191C] dark:text-[#F4F4F0] outline-none focus:border-[#526F61] dark:focus:border-[#8BA997]"
+                />
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveBackendUrl}
+                  className="text-xs h-9 px-4 shrink-0"
+                >
+                  {savedUrl ? "Saved!" : "Save & Connect"}
+                </Button>
               </div>
             </div>
 

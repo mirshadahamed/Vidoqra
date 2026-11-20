@@ -93,7 +93,10 @@ export function UrlInput({ onAnalyzed }: UrlInputProps) {
       setAnalysisResult(metadata)
       if (onAnalyzed) onAnalyzed()
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to analyze media URL"
+      let message = err instanceof Error ? err.message : "Failed to analyze media URL"
+      if (message.toLowerCase().includes("failed to fetch")) {
+        message = "Could not reach the backend service. Check Settings to set your backend URL or ensure your backend is deployed."
+      }
       setAnalysisError(message)
     }
   }
