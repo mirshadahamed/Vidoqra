@@ -10,3 +10,4 @@ for p in [root_dir, backend_dir]:
         sys.path.insert(0, p)
 
 from backend.api.index import app, handler
+

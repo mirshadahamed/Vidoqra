@@ -31,3 +31,6 @@ except ImportError:
 
 # Vercel ASGI / WSGI entry points
 handler = app
+app = app
+
+__all__ = ["app", "handler"]
