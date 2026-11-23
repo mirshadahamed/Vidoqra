@@ -20,3 +20,4 @@ if "backend" not in sys.modules:
     app_pkg.__path__ = [app_dir]
     sys.modules["backend.app"] = app_pkg
     pkg.app = app_pkg
+

@@ -33,7 +33,7 @@ class EventBus:
 
         try:
             self.redis_client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-            await self.redis_client.ping()
+            await asyncio.wait_for(self.redis_client.ping(), timeout=1.5)
             logger.info("EventBus connected to Redis Pub/Sub.")
             self._pubsub_task = asyncio.create_task(self._listen_redis_events())
         except Exception as e:

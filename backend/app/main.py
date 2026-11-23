@@ -21,7 +21,8 @@ if "backend" not in sys.modules:
     sys.modules["backend.app"] = app_pkg
     pkg.app = app_pkg
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.core.database import db
@@ -33,12 +34,21 @@ from backend.app.api.v1 import health, analyze, formats, downloads, history
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Initializing Vidoqra Backend Services...")
-    await db.connect()
-    await event_bus.connect_redis()
+    try:
+        await asyncio.wait_for(db.connect(), timeout=3.0)
+    except Exception as e:
+        logger.warning(f"Database startup warning: {e}")
+    try:
+        await asyncio.wait_for(event_bus.connect_redis(), timeout=2.0)
+    except Exception as e:
+        logger.warning(f"EventBus startup warning: {e}")
     yield
     # Shutdown
     logger.info("Shutting down Vidoqra Backend Services...")
-    await db.close()
+    try:
+        await db.close()
+    except Exception as e:
+        logger.warning(f"Database shutdown warning: {e}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -48,6 +58,22 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Global exception handler to guarantee CORS headers on any unhandled error
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    origin = request.headers.get("origin", "https://vidoqra.vercel.app")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"},
+        headers={
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
 
 # CORS Middleware
 app.add_middleware(

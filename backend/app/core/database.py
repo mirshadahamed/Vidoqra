@@ -32,7 +32,10 @@ class InMemoryCollection:
         self.name = name
         self._data: Dict[str, Dict[str, Any]] = {}
         self._lock = asyncio.Lock()
-        self._file_path = os.path.abspath(os.path.join(settings.LOCAL_STORAGE_DIR, f"../db_{name}.json"))
+        if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+            self._file_path = f"/tmp/vidoqra_db_{name}.json"
+        else:
+            self._file_path = os.path.abspath(os.path.join(settings.LOCAL_STORAGE_DIR, f"../db_{name}.json"))
         self._load_from_disk()
 
     def _load_from_disk(self):
@@ -172,8 +175,8 @@ class Database:
                     settings.MONGODB_URI,
                     serverSelectionTimeoutMS=2000
                 )
-                # Test connection
-                await self.client.admin.command('ping')
+                # Test connection with timeout
+                await asyncio.wait_for(self.client.admin.command('ping'), timeout=2.0)
                 self.db = self.client[settings.MONGODB_DATABASE]
                 self.is_connected = True
                 self.is_fallback = False

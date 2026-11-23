@@ -10,7 +10,14 @@ from backend.app.core.logging import logger
 class StorageService:
     def __init__(self):
         self.local_dir = settings.LOCAL_STORAGE_DIR
-        os.makedirs(self.local_dir, exist_ok=True)
+        try:
+            os.makedirs(self.local_dir, exist_ok=True)
+        except OSError:
+            self.local_dir = "/tmp/vidoqra/storage/media"
+            try:
+                os.makedirs(self.local_dir, exist_ok=True)
+            except OSError as e:
+                logger.warning(f"Could not create storage dir: {e}")
 
     def get_destination_path(self, job_id: str, ext: str) -> str:
         """Generate safe, sanitized absolute path for a downloaded file."""
